@@ -8,16 +8,6 @@ from parsing_functions import (parse_function, authorization_function, output_fu
                                chess_com_moves_output, ChessNotFound, AuthorizationError)
 
 
-def truncate_moves(moves: list[Move], n_best: int = 3, n_worst: int = 3) -> list[Move]:
-    """ Return n_best and n_worst moves from a list of moves. """
-    moves.sort(key=lambda x: x.cost, reverse=True)
-    if len(moves) <= n_best + n_worst:
-        return moves
-    output = moves[:n_best]
-    output.extend(moves[-n_worst:])
-    return output
-
-
 class ChessParser:
     def __init__(self, url: str = "https://www.chess.com/", driver: Optional[WebDriver] = None,
                  n_best: int = 3, n_worst: int = 3,
@@ -72,10 +62,19 @@ class ChessParser:
         parse_func = parse_func or self.parse_func
         try:
             chess_set = parse_func(self.driver)
-            white_moves = truncate_moves(chess_set.player_white.available_moves_costs, self.n_best, self.n_worst)
-            black_moves = truncate_moves(chess_set.player_black.available_moves_costs, self.n_best, self.n_worst)
+            white_moves = self.truncate_moves(chess_set.player_white.available_moves_costs)
+            black_moves = self.truncate_moves(chess_set.player_black.available_moves_costs)
             print(f"White's moves costs: {self.output_func(white_moves)}\n"
                   f"Black's moves costs: {self.output_func(black_moves)}")
         except ChessNotFound as err:
             print(err)
+
+    def truncate_moves(self, moves: list[Move]) -> list[Move]:
+        """ Return n_best and n_worst moves from a list of moves. """
+        moves.sort(key=lambda x: x.cost, reverse=True)
+        if len(moves) <= self.n_best + self.n_worst:
+            return moves
+        output = moves[:self.n_best]
+        output.extend(moves[-self.n_worst:])
+        return output
 

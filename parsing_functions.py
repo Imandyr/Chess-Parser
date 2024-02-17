@@ -57,20 +57,31 @@ class ChessComTableParser:
         """
         self.xpath = xpath
         self.__doc__ = doc
+        self._driver: Optional[WebDriver] = None
+
+    def _create_game_set(self) -> ChessSetBot:
+        """ Creates a game set with table, white and black players. """
+        table = Table()
+        white, black = HardBot(table, True, "White"), HardBot(table, False, "Black")
+        return ChessSetBot(table, white, black)
 
     def __call__(self, driver: WebDriver) -> ChessSetBot:
         """ Parses chess figures and positions from the currently opened page from https://www.chess.com/
         into ChessSetBot. """
-        table = Table()
-        white, black = HardBot(table, True, "White"), HardBot(table, False, "Black")
+        self._driver = driver
+        chess_set = self._create_game_set()
+
         for figure in driver.find_elements(By.XPATH, self.xpath):
             if (figure := figure_pattern.match(figure.get_attribute("class"))) is not None:
                 figure = figure.groupdict()
-                table.set_figure(piece_dict[figure["piece"]](table, white if figure["color"] == "w" else black),
-                                 (8 - int(figure["row"]), int(figure["column"]) - 1))
-        if len(table.figures) == 0:
+                chess_set.table.set_figure(piece_dict[figure["piece"]](chess_set.table,
+                                                                       chess_set.player_1
+                                                                       if figure["color"] == "w"
+                                                                       else chess_set.player_2),
+                                           (8 - int(figure["row"]), int(figure["column"]) - 1))
+        if len(chess_set.table.figures) == 0:
             raise ChessNotFound("The parsing function did not find any chess figures on the page.")
-        return ChessSetBot(table, white, black)
+        return chess_set
 
 
 chess_com_bot_parse = ChessComTableParser(
@@ -78,6 +89,37 @@ chess_com_bot_parse = ChessComTableParser(
     " Parses chess figures and positions from the currently opened page from https://www.chess.com/ "
     "when playing against bot. "
 )
+
+
+class ChessComTableParserPvP(ChessComTableParser):
+    def _create_game_set(self) -> ChessSetBot:
+        """ Creates a game set with table, white and black players. With respect to player color. """
+        table = Table()
+        player_c = self._driver.find_element(
+            By.XPATH,
+            '//*[@id="board-layout-player-bottom"]/div/div[2]/wc-captured-pieces'
+        ).get_attribute("player-color")
+        if player_c == 2:
+            white, black = HardBot(table, False, "White"), HardBot(table, True, "Black")
+        else:
+            white, black = HardBot(table, True, "White"), HardBot(table, False, "Black")
+        return ChessSetBot(table, white, black)
+
+
+chess_com_pvp_parse = ChessComTableParserPvP(
+    '//*[@id="board-single"]/div',
+    " Parses chess figures and positions from the currently opened page from https://www.chess.com/ "
+    "when playing against player. "
+)
+
+
+# //*[@id="board-layout-player-bottom"]/div/div[2]/wc-captured-pieces
+# <wc-captured-pieces board-id="board-single" player-color="2" class="player-pieces">
+#       <div>
+#         <span class="captured-pieces-cpiece captured-pieces-score"></span></div>
+#     </wc-captured-pieces>
+# 2 = black, 1 = white
+
 
 
 def chess_com_authorization(driver: WebDriver, username: str, password: str) -> None:
