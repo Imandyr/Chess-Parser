@@ -121,7 +121,6 @@ chess_com_pvp_parse = ChessComTableParserPvP(
 # 2 = black, 1 = white
 
 
-
 def chess_com_authorization(driver: WebDriver, username: str, password: str) -> None:
     """ Authorizes on https://www.chess.com/ using given username and password. """
     prev_url = driver.current_url
@@ -142,8 +141,8 @@ def to_chess_com(position: tuple[int, int]) -> tuple[int, int]:
 
 def chess_com_moves_output(moves: list[Move]) -> str:
     """ Converts a list of figure moves into appropriate for https://www.chess.com/ string representation."""
-    return ", ".join(f"{move.figure.__class__.__name__}{to_chess_com(move.figure.position)} -> "
-                     f"{to_chess_com(move.to)} == {move.cost}" for move in moves)
+    return "  ".join(f"{move.figure}{to_chess_com(move.figure.position)} -> "
+                     f"{move.content}{to_chess_com(move.to)} == {move.cost}" for move in moves)
 
 
 

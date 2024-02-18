@@ -23,7 +23,7 @@ def run(url: str, parse_hotkey: str, username: str, password: str, parse_func=ch
 if __name__ == "__main__":
     url = "https://www.chess.com/play/computer/arthur-the-adequate"
     parse_hotkey = "<ctrl>+<alt>+p"
-    parse_func = chess_com_pvp_parse
+    parse_func = chess_com_bot_parse
     # username = input("www.chess.com username: ")
     # password = input("www.chess.com password: ")
     username = "UnstableGamer282"
