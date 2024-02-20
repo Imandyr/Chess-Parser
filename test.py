@@ -13,4 +13,6 @@ def test_truncate_moves() -> None:
     assert t == fake_moves
 
 
+def test_2():
+    pass
 
