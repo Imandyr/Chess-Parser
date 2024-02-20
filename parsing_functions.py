@@ -141,8 +141,8 @@ def to_chess_com(position: tuple[int, int]) -> tuple[int, int]:
 
 def chess_com_moves_output(moves: list[Move]) -> str:
     """ Converts a list of figure moves into appropriate for https://www.chess.com/ string representation."""
-    return "  ".join(f"{move.figure}{to_chess_com(move.figure.position)} -> "
-                     f"{move.content}{to_chess_com(move.to)} == {move.cost}" for move in moves)
+    return " ; ".join(f"{move.figure}{to_chess_com(move.figure.position)} -> "
+                      f"{move.content}{to_chess_com(move.to)} == {move.cost}" for move in moves)
 
 
 
