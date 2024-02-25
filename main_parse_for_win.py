@@ -1,7 +1,7 @@
 
 
 from parsing_functions import chess_com_pvp_parse, chess_com_bot_parse
-from main import run
+from main_parse import run
 
 
 if __name__ == "__main__":

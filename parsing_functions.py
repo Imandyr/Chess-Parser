@@ -1,6 +1,8 @@
 from dataclasses import dataclass
-from typing import Callable, Optional, TypedDict
+from typing import Callable, Optional, TypedDict, Iterable
 import re
+
+from selenium.common import WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.common.keys import Keys
@@ -27,17 +29,18 @@ class ChessSetBot:
 
     def __post_init__(self) -> None:
         self.table = self.table or Table(8, 8)
-        self.player_1 = self.player_white or HardBot(self.table, True, "White")
-        self.player_2 = self.player_black or HardBot(self.table, False, "Black")
+        self.player_white = self.player_white or HardBot(self.table, True, "White")
+        self.player_black = self.player_black or HardBot(self.table, False, "Black")
 
 
 authorization_function = Callable[[WebDriver], None]
 parse_function = Callable[[WebDriver], ChessSetBot]
-output_function = Callable[[list[Move]], str]
+output_function = Callable[[Iterable[Move]], str]
 
 
 figure_pattern = re.compile(r"piece (?P<color>\w)(?P<piece>\w) square-(?P<column>\d)(?P<row>\d)")
-piece_dict = {"r": Rook, "n": Knight, "b": Bishop, "k": King, "q": Queen, "p": Pawn}
+piece_dict = {"r": Rook, "n": Knight, "b": Bishop, "k": King, "q": Queen, "p": Pawn, "f": Figure}
+piece_dict_rev = {v: k for k, v in piece_dict.items()}
 
 
 class FigureDict(TypedDict):
@@ -75,9 +78,9 @@ class ChessComTableParser:
             if (figure := figure_pattern.match(figure.get_attribute("class"))) is not None:
                 figure = figure.groupdict()
                 chess_set.table.set_figure(piece_dict[figure["piece"]](chess_set.table,
-                                                                       chess_set.player_1
+                                                                       chess_set.player_white
                                                                        if figure["color"] == "w"
-                                                                       else chess_set.player_2),
+                                                                       else chess_set.player_black),
                                            (8 - int(figure["row"]), int(figure["column"]) - 1))
         if len(chess_set.table.figures) == 0:
             raise ChessNotFound("The parsing function did not find any chess figures on the page.")
@@ -91,34 +94,34 @@ chess_com_bot_parse = ChessComTableParser(
 )
 
 
-class ChessComTableParserPvP(ChessComTableParser):
-    def _create_game_set(self) -> ChessSetBot:
-        """ Creates a game set with table, white and black players. With respect to player color. """
-        table = Table()
-        player_c = self._driver.find_element(
-            By.XPATH,
-            '//*[@id="board-layout-player-bottom"]/div/div[2]/wc-captured-pieces'
-        ).get_attribute("player-color")
-        if player_c == 2:
-            white, black = HardBot(table, False, "White"), HardBot(table, True, "Black")
-        else:
-            white, black = HardBot(table, True, "White"), HardBot(table, False, "Black")
-        return ChessSetBot(table, white, black)
+# class ChessComTableParserPvP(ChessComTableParser):
+#     def _create_game_set(self) -> ChessSetBot:
+#         """ Creates a game set with table, white and black players. With respect to player color. """
+#         table = Table()
+#         player_c = self._driver.find_element(
+#             By.XPATH,
+#             '//*[@id="board-layout-player-bottom"]/div/div[2]/wc-captured-pieces'
+#         ).get_attribute("player-color")
+#         if player_c == 2:
+#             white, black = HardBot(table, False, "White"), HardBot(table, True, "Black")
+#         else:
+#             white, black = HardBot(table, True, "White"), HardBot(table, False, "Black")
+#         return ChessSetBot(table, white, black)
 
 
-chess_com_pvp_parse = ChessComTableParserPvP(
+chess_com_pvp_parse = ChessComTableParser(
     '//*[@id="board-single"]/div',
     " Parses chess figures and positions from the currently opened page from https://www.chess.com/ "
     "when playing against player. "
 )
 
 
-# //*[@id="board-layout-player-bottom"]/div/div[2]/wc-captured-pieces
-# <wc-captured-pieces board-id="board-single" player-color="2" class="player-pieces">
-#       <div>
-#         <span class="captured-pieces-cpiece captured-pieces-score"></span></div>
-#     </wc-captured-pieces>
-# 2 = black, 1 = white
+def chess_com_universal_parser(driver: WebDriver) -> ChessSetBot:
+    """ Universal parser, which can parse both PvP and PvB. """
+    try:
+        return chess_com_pvp_parse(driver)
+    except (WebDriverException, ChessNotFound):
+        return chess_com_bot_parse(driver)
 
 
 def chess_com_authorization(driver: WebDriver, username: str, password: str) -> None:
@@ -139,11 +142,7 @@ def to_chess_com(position: tuple[int, int]) -> tuple[int, int]:
     return 8 - position[0], position[1] + 1
 
 
-def chess_com_moves_output(moves: list[Move]) -> str:
+def chess_com_moves_output(moves: Iterable[Move]) -> str:
     """ Converts a list of figure moves into appropriate for https://www.chess.com/ string representation."""
     return " ; ".join(f"{move.figure}{to_chess_com(move.figure.position)} -> "
                       f"{move.content}{to_chess_com(move.to)} == {move.cost}" for move in moves)
-
-
-
-

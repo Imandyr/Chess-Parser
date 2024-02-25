@@ -2,10 +2,10 @@ from pynput.keyboard import HotKey, Listener
 from selenium.webdriver.remote.webdriver import WebDriver
 
 from parsing import ChessParser
-from parsing_functions import chess_com_authorization, chess_com_pvp_parse, chess_com_bot_parse
+from parsing_functions import chess_com_authorization, chess_com_pvp_parse, chess_com_bot_parse, chess_com_universal_parser
 
 
-def run(url: str, parse_hotkey: str, username: str, password: str, parse_func=chess_com_pvp_parse) -> None:
+def run(url: str, parse_hotkey: str, username: str, password: str, parse_func=chess_com_universal_parser) -> None:
 
     def auth(driver: WebDriver) -> None:
         chess_com_authorization(driver, username, password)
@@ -23,7 +23,7 @@ def run(url: str, parse_hotkey: str, username: str, password: str, parse_func=ch
 if __name__ == "__main__":
     url = "https://www.chess.com/play/computer/arthur-the-adequate"
     parse_hotkey = "<ctrl>+<alt>+p"
-    parse_func = chess_com_bot_parse
+    parse_func = chess_com_universal_parser
     # username = input("www.chess.com username: ")
     # password = input("www.chess.com password: ")
     username = "UnstableGamer282"

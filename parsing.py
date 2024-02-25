@@ -1,11 +1,14 @@
 from typing import Optional, Callable
+
+from console_chess_imandyr.base import Table
 from selenium import webdriver
+from selenium.common import WebDriverException
 from selenium.webdriver.remote.webdriver import WebDriver
 from console_chess_imandyr.game import ChessSet
 from console_chess_imandyr.bot import Move
 
 from parsing_functions import (parse_function, authorization_function, output_function, chess_com_bot_parse,
-                               chess_com_moves_output, ChessNotFound, AuthorizationError)
+                               chess_com_moves_output, ChessNotFound, AuthorizationError, ChessSetBot)
 
 
 class ChessParser:
@@ -62,12 +65,24 @@ class ChessParser:
         parse_func = parse_func or self.parse_func
         try:
             chess_set = parse_func(self.driver)
-            white_moves = self.truncate_moves(chess_set.player_white.available_moves_costs)
-            black_moves = self.truncate_moves(chess_set.player_black.available_moves_costs)
+
+            def add_con(x):
+                return add_content(chess_set.table, x)
+
+            white_moves = map(add_con, self.truncate_moves(chess_set.player_white.available_moves_costs))
+            black_moves = map(add_con, self.truncate_moves(chess_set.player_black.available_moves_costs))
             print(f"White's moves costs: {self.output_func(white_moves)}\n"
                   f"Black's moves costs: {self.output_func(black_moves)}")
+
         except ChessNotFound as err:
             print(err)
+
+        except WebDriverException:
+            print("An exception occurred when a parsing function tried to parse the page.")
+
+    def use_parse_func(self) -> ChessSetBot:
+        """ Uses self.parse_func and returns its output. """
+        return self.parse_func(self.driver)
 
     def truncate_moves(self, moves: list[Move]) -> list[Move]:
         """ Return n_best and n_worst moves from a list of moves. """
@@ -78,3 +93,7 @@ class ChessParser:
         output.extend(moves[-self.n_worst:])
         return output
 
+
+def add_content(table: Table, move: Move) -> Move:
+    """ Adds content to move if any. """
+    return Move(move.figure, move.to, table.get_figure(move.to), move.cost)
