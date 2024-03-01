@@ -50,6 +50,21 @@ class FigureDict(TypedDict):
     row: str
 
 
+def tune_pawns(table: Table) -> None:
+    """
+    Takes table with figures and changes first_move attribute in all pawns to value that it must really be now.
+    :param table: Table with figures.
+    :return: None, all changes will be done to the given table.
+    """
+    for f in table.figures:
+        if isinstance(f, Pawn):
+            p = f.position
+            if p[0] in {1, 6}:
+                f.first_move = True
+            else:
+                f.first_move = False
+
+
 class ChessComTableParser:
     def __init__(self, xpath: str, doc: str) -> None:
         """
@@ -84,6 +99,7 @@ class ChessComTableParser:
                                            (8 - int(figure["row"]), int(figure["column"]) - 1))
         if len(chess_set.table.figures) == 0:
             raise ChessNotFound("The parsing function did not find any chess figures on the page.")
+        tune_pawns(chess_set.table)
         return chess_set
 
 

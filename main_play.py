@@ -1,4 +1,5 @@
 import threading
+from typing import Callable
 
 from pynput.keyboard import HotKey, Listener
 from selenium.webdriver.remote.webdriver import WebDriver
@@ -9,6 +10,12 @@ from parsing_functions import (chess_com_authorization, chess_com_pvp_parse, che
 from player import ChessComPlayer
 
 
+def create_hotkey(key: str, func: Callable) -> Listener:
+    start = HotKey(HotKey.parse(key), func)
+    start_listener = Listener(on_press=start.press, on_release=start.release)
+    return start_listener
+
+
 def run(url: str, move_hotkey: str, username: str, password: str, parse_func=chess_com_universal_parser) -> None:
 
     def auth(driver: WebDriver) -> None:
@@ -16,8 +23,7 @@ def run(url: str, move_hotkey: str, username: str, password: str, parse_func=che
 
     chess_player = ChessComPlayer(ChessParser(url, parse_func=parse_func, authorization=auth))
 
-    hotkey = HotKey(HotKey.parse(move_hotkey), chess_player.move)
-    listener = Listener(on_press=hotkey.press, on_release=hotkey.release)
+    listener = create_hotkey(move_hotkey, chess_player.move)
     listener.start()
 
     # Waits forever for listener to end
@@ -36,12 +42,10 @@ def run_with_autoplay(url: str, start_hotkey: str, stop_hotkey: str, username: s
         autoplay = threading.Thread(target=chess_player.eternal_movement, args=(5,))
         autoplay.start()
 
-    start = HotKey(HotKey.parse(start_hotkey), start_autoplay)
-    start_listener = Listener(on_press=start.press, on_release=start.release)
+    start_listener = create_hotkey(start_hotkey, start_autoplay)
     start_listener.start()
 
-    stop = HotKey(HotKey.parse(stop_hotkey), lambda: setattr(chess_player, "autoplay", False))
-    stop_listener = Listener(on_press=stop.press, on_release=stop.release)
+    stop_listener = create_hotkey(stop_hotkey, lambda: setattr(chess_player, "autoplay", False))
     stop_listener.start()
 
     stop_listener.join()
