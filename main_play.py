@@ -56,20 +56,9 @@ if __name__ == "__main__":
     start_hotkey = "<ctrl>+<alt>+a"
     stop_hotkey = "<ctrl>+<alt>+o"
     parse_func = chess_com_universal_parser
-    # username = input("www.chess.com username: ")
-    # password = input("www.chess.com password: ")
-    username = "UnstableGamer282"
-    password = "o30klvolikn40IfnMzZoe93uchf"
+    username = input("www.chess.com username: ")
+    password = input("www.chess.com password: ")
     run_with_autoplay(url, start_hotkey, stop_hotkey, username, password, parse_func)
-
-    # url = "https://www.chess.com/play/computer/arthur-the-adequate"
-    # hotkey = "<ctrl>+<alt>+p"
-    # parse_func = chess_com_universal_parser
-    # # username = input("www.chess.com username: ")
-    # # password = input("www.chess.com password: ")
-    # username = "UnstableGamer282"
-    # password = "o30klvolikn40IfnMzZoe93uchf"
-    # run(url, hotkey, username, password, parse_func)
 
 
 
